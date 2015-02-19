@@ -266,17 +266,26 @@
        (.unlock mutex)
        nil))))
 
-(defn- ex-handler [ex]
-  (-> (Thread/currentThread)
-      .getUncaughtExceptionHandler
-      (.uncaughtException (Thread/currentThread) ex))
-  nil)
+(defn- ex-handler
+  ([ex]
+   (-> (Thread/currentThread)
+       .getUncaughtExceptionHandler
+       (.uncaughtException (Thread/currentThread) ex))
+   nil)
+  ([ex _]
+   (ex-handler ex)))
 
-(defn- handle [buf exh t]
-  (let [else ((or exh ex-handler) t)]
-    (if (nil? else)
-      buf
-      (impl/add! buf else))))
+(defn- handle
+  ([buf exh t]
+   (let [else ((or exh ex-handler) t)]
+     (if (nil? else)
+       buf
+       (impl/add! buf else))))
+  ([buf exh t val]
+   (let [else ((or exh ex-handler) t val)]
+     (if (nil? else)
+       buf
+       (impl/add! buf else)))))
 
 (defn chan
   ([buf] (chan buf nil))
@@ -295,5 +304,4 @@
              (try
                (add! buf val)
                (catch Throwable t
-                 (handle buf exh t)))))))))
-
+                 (handle buf exh t val)))))))))

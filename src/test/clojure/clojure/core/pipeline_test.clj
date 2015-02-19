@@ -61,14 +61,14 @@
   (doseq [pf [pipeline pipeline-blocking]]
     (let [cout (chan 1)
           chex (chan 1)
-          ex-mapping (mapping (fn [x] (if (= x 3) (throw (ex-info "err" {:data x})) x)))
-          ex-handler (fn [e] (do (>!! chex e) :err))]
+          ex-mapping (mapping (fn [x] (if (= x 3) (throw (Exception. "err")) x)))
+          ex-handler (fn [e val] (do (>!! chex {:ex e :data val}) :err))]
       (pf 5 cout ex-mapping (to-chan [1 2 3 4]) true ex-handler)
       (is (= 1 (<!! cout)))
       (is (= 2 (<!! cout)))
       (is (= :err (<!! cout)))
       (is (= 4 (<!! cout)))
-      (is (= {:data 3} (ex-data (<!! chex)))))))
+      (is (= 3 (:data (<!! chex)))))))
 
 (defn multiplier-async [v ch]
   (thread
